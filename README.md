@@ -1,4 +1,4 @@
-# cashtag_analyzer
+# Cashtag Analyzer
 A Python module to analyze Twitter cashtags.
 
 Makes use of a YAML-based settings file to specify the following user-specific parameters:
