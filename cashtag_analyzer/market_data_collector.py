@@ -1,14 +1,15 @@
 ## MODULES ##
-import cashtag_analyzer  # Import the modules from the __init__ script.
-import ccxt
-import collections
-import datetime
-import numpy
-import re
-import sqlalchemy
+import cashtag_analyzer		# Import the modules from the __init__ script.
+import ccxt					# Import ccxt to connect to exchange APIs.
+import collections			# Import collections to create lists within dictionaries on the fly.
+import datetime				# Import datetime for the timedelta and utcfromtimestamp functions.
+import numpy				# Import numpy to compare the contents of lists.
+import re					# Import re to split up the lists of symbols into individual items.
+import sqlalchemy			# Import sqlalchemy to do specific data selection from the MySQL database.
 
 
 ## FUNCTIONS ##
+# Determines what symbols in the cashtag list are traded on the selected exchange.
 def create_match_list(exchange, twitter_base_list, twitter_dict):
 	print('Checking list of cashtags against supported symbols in {}...'.format(exchange.name))
 
@@ -37,6 +38,7 @@ def create_match_list(exchange, twitter_base_list, twitter_dict):
 	return match_list
 
 
+# Queries the exchange for market data for the time period around the Tweet each symbol in the match list.
 def create_market_data_list(exchange, match_list, limit=2, timeframe='1d'):
 	print('Getting market data for each cashtag...')
 
@@ -71,6 +73,8 @@ def create_market_data_list(exchange, match_list, limit=2, timeframe='1d'):
 	return market_data_list
 
 
+# Get a list of cashtags for the current screen name and turn it into a list (for direct processing) and a dictionary
+# (for lookup purposes during the direct processing).
 def create_twitter_lists(screen_name, table):
 	print('Creating list of cashtags...')
 
@@ -94,24 +98,27 @@ def create_twitter_lists(screen_name, table):
 
 
 ## MAIN CODE BODY ##
-# Load the settings from the settings file.
+# Load the settings from the settings file and turn them into variables.
 settings = cashtag_analyzer.load_settings()
+exchange_id = settings['exchange_options']['exchange_id']
+limit = settings['exchange_options']['limit']
+results_table = settings['mysql_connection']['results_table']
+timeframe = settings['exchange_options']['timeframe']
+tweets_table = settings['mysql_connection']['tweets_table']
+
+# Dynamically load the exchange method from the ccxt module.
+exchange_method = getattr(ccxt, exchange_id)
+exchange = exchange_method()
 
 # Connect to the database.
 db_connection = cashtag_analyzer.connect_to_db(settings['mysql_connection'])
+table = cashtag_analyzer.get_table(db_connection, tweets_table)
 
-table_name = settings['mysql_connection']['table']
-table = cashtag_analyzer.get_table(db_connection, table_name)
-
-exchange_id = settings['exchange_options']['exchange_id']
-exchange_method = getattr(ccxt, exchange_id)
-exchange = exchange_method()
-limit = settings['exchange_options']['limit']
-timeframe = settings['exchange_options']['timeframe']
-
+# Select a list of screen names from the database.
 select_query = sqlalchemy.select([table.c['screen_name']]).distinct()
 results = db_connection.execute(select_query)
 
+# Loop through the screen name list and collect market data for each cashtag.
 for result in results:
 	screen_name = result[0]
 
@@ -121,14 +128,9 @@ for result in results:
 	match_list = create_match_list(exchange, twitter_base_list, twitter_dict)
 	market_data_list = create_market_data_list(exchange, match_list, limit=limit, timeframe=timeframe)
 
-	table = cashtag_analyzer.get_table(db_connection, 'market_data')
-	insert_query = table.insert(market_data_list)
-	#db_connection.execute(insert_query)
-
-	# Do a SELECT * on the table name to get a count of the number of rows that were inserted.
-	select_query = table.select()
-	results = db_connection.execute(select_query)
-	results_text = '{} row(s) were successfully inserted into the MySQL database.'.format(len(results.fetchall()))
+	# As a sanity check, get the number of rows in the table before executing the INSERT statement and print the results.
+	results_text = 'Pre-INSERT row count: ' + cashtag_analyzer.get_row_count(db_connection, table)
 	print(results_text)
 
-	print('Results collected and available for analysis.')
+	# Insert the market data into the database.
+	cashtag_analyzer.insert_data(db_connection, market_data_list, table)

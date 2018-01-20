@@ -60,14 +60,9 @@ screen_names = settings['screen_names']
 # Get the list of cashtagged Tweets and store them in a list.
 cashtag_tweets_list = get_cashtag_tweets(screen_names, twitter_api)
 
-# Insert the contents of the cashtag Tweets list into the MySQL table.
-table_name = settings['mysql_connection']['table']
-table = cashtag_analyzer.get_table(db_connection, table_name)
-insert_query = table.insert(cashtag_tweets_list)
-db_connection.execute(insert_query)
-
-# Do a SELECT * on the table name to get a count of the number of rows that were inserted.
-select_query = table.select()
-results = db_connection.execute(select_query)
-results_text = '{} row(s) were successfully inserted into the MySQL database.'.format(len(results.fetchall()))
+# As a sanity check, get the number of rows in the table before executing the INSERT statement and print the results.
+results_text = 'Pre-INSERT row count: ' + cashtag_analyzer.get_row_count(db_connection, table)
 print(results_text)
+
+# Insert the list of cashtagged Tweets into the database.
+cashtag_analyzer.insert_data(db_connection, cashtag_tweets_list, table)
