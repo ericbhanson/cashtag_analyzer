@@ -1,4 +1,5 @@
 import sqlalchemy
+import sys
 import yaml
 
 def connect_to_db(db_settings):
@@ -20,7 +21,7 @@ def get_table(db_connection, table_name):
 	return table
 
 
-def load_settings(file_location, file_name = 'settings.yaml'):
+def load_settings(file_location=sys.argv[1], file_name='settings.yaml'):
 	with open(file_location + file_name, 'rb') as settings_file:
 		yaml_settings = settings_file.read()
 		settings = yaml.load(yaml_settings)

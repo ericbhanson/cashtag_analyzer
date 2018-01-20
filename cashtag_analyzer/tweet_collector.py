@@ -46,8 +46,7 @@ def get_cashtag_tweets(screen_names, twitter_api):
 
 ## MAIN CODE BODY ##
 # Load the settings from the settings file.
-settings = cashtag_analyzer.load_settings(
-	'/Users/eric/Google Drive/Digital Currency Product/Settings Files/Careless Cashtag/')
+settings = cashtag_analyzer.load_settings()
 
 # Connect to the database.
 db_connection = cashtag_analyzer.connect_to_db(settings['mysql_connection'])
@@ -63,12 +62,12 @@ cashtag_tweets_list = get_cashtag_tweets(screen_names, twitter_api)
 
 # Insert the contents of the cashtag Tweets list into the MySQL table.
 table_name = settings['mysql_connection']['table']
-cashtag_tweets_table = cashtag_analyzer.get_table(db_connection, table_name)
-insert_query = cashtag_tweets_table.insert(cashtag_tweets_list)
+table = cashtag_analyzer.get_table(db_connection, table_name)
+insert_query = table.insert(cashtag_tweets_list)
 db_connection.execute(insert_query)
 
 # Do a SELECT * on the table name to get a count of the number of rows that were inserted.
-select_query = cashtag_tweets_table.select()
+select_query = table.select()
 results = db_connection.execute(select_query)
 results_text = '{} row(s) were successfully inserted into the MySQL database.'.format(len(results.fetchall()))
 print(results_text)
