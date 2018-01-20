@@ -1,0 +1,4 @@
+exchange_options: {exchange_id: '', limit: , timeframe: ''}
+mysql_connection: {dbname: '', host: '', password: '', protocol: mysql+mysqlconnector, table: '', user: ''}
+screen_names: ['']
+twitter_api: {consumer_key: '', consumer_secret: '', access_token: '', access_token_secret: ''}
