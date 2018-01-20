@@ -1,8 +1,9 @@
 ## MODULES ##
-import cashtag_analyzer	# Import the modules from the __init__ script.
+import cashtag_analyzer  # Import the modules from the __init__ script.
 import ccxt
 import collections
 import datetime
+import numpy
 import re
 import sqlalchemy
 
@@ -22,7 +23,7 @@ def create_match_list(exchange, twitter_base_list, twitter_dict):
 		base_dict[base].append(symbol)
 
 	base_list = list(base_set)
-	match = np.isin(base_list, twitter_base_list, assume_unique=True)
+	match = numpy.isin(base_list, twitter_base_list, assume_unique=True)
 
 	for i in range(len(base_list)):
 
@@ -50,13 +51,20 @@ def create_market_data_list(exchange, match_list, limit=2, timeframe='1d'):
 		for symbol in symbols:
 			uohlcv_list = exchange.fetch_ohlcv(symbol, limit=limit, since=since, timeframe=timeframe)
 
-			if uohlcv_list:
+			if (uohlcv_list and len(uohlcv_list) == 2):
 
-				for item in uohlcv_list:
-					row_list = [base, created_at, symbol]
-					row_list.extend(item)
-
-				market_data_list.append(row_list)
+				for uohlcv in uohlcv_list:
+					print(since, uohlcv)
+					candle_ts = datetime.datetime.utcfromtimestamp(uohlcv[0] // 1000)
+					close_price = float(uohlcv[4])
+					high_price = float(uohlcv[2])
+					low_price = float(uohlcv[3])
+					open_price = float(uohlcv[1])
+					volume = float(uohlcv[5])
+					uohlcv_dict = {'base': base, 'candle_ts': candle_ts, 'close': close_price, 'high': high_price,
+								   'low': low_price, 'open': open_price, 'symbol': symbol, 'tweet_ts': created_at,
+								   'volume': volume}
+					market_data_list.append(uohlcv_dict)
 
 	print('Market data collection complete.')
 
@@ -112,5 +120,15 @@ for result in results:
 	twitter_base_list, twitter_dict = create_twitter_lists(screen_name, table)
 	match_list = create_match_list(exchange, twitter_base_list, twitter_dict)
 	market_data_list = create_market_data_list(exchange, match_list, limit=limit, timeframe=timeframe)
+
+	table = cashtag_analyzer.get_table(db_connection, 'market_data')
+	insert_query = table.insert(market_data_list)
+	#db_connection.execute(insert_query)
+
+	# Do a SELECT * on the table name to get a count of the number of rows that were inserted.
+	select_query = table.select()
+	results = db_connection.execute(select_query)
+	results_text = '{} row(s) were successfully inserted into the MySQL database.'.format(len(results.fetchall()))
+	print(results_text)
 
 	print('Results collected and available for analysis.')
