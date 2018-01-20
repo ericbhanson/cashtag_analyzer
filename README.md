@@ -1,8 +1,6 @@
 # Cashtag Analyzer
 A Python module to analyze Twitter cashtags.
 
-Test
-
 Makes use of a YAML-based settings file to specify the following user-specific parameters:
 - exchange_options: 
  - exchange_id: The ccxt ID of the exchange to query for market data. See https://github.com/ccxt/ccxt/wiki/Exchange-Markets for a list of supported exchanges and their IDs.
