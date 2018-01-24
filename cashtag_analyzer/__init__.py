@@ -8,7 +8,7 @@ def connect_to_db(db_settings):
 	password = db_settings['password']
 	host = db_settings['host']
 	dbname = db_settings['dbname']
-	engine = sqlalchemy.create_engine(protocol + '://' + user + ':' + password + '@' + host + '/' + dbname,
+	engine = sqlalchemy.create_engine(protocol + '://' + user + ':' + password + '@' + host + '/' + dbname + '?charset=utf8mb4',
 									  pool_recycle=30)
 	db_connection = engine.connect()
 
@@ -35,7 +35,7 @@ def insert_data(db_connection, data_to_insert, table):
 	try:
 		db_connection.execute(insert_query)
 
-	except sqlalchemy.SQLAlchemyError:
+	except sqlalchemy.exc.DBAPIError:
 		raise
 
 	else:

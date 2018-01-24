@@ -1,4 +1,3 @@
-## MODULES ##
 import cashtag_analyzer		# Import the modules from the __init__ script.
 import ccxt					# Import ccxt to connect to exchange APIs.
 import collections			# Import collections to create lists within dictionaries on the fly.
@@ -8,7 +7,6 @@ import re					# Import re to split up the lists of symbols into individual items
 import sqlalchemy			# Import sqlalchemy to do specific data selection from the MySQL database.
 
 
-## FUNCTIONS ##
 # Determines what symbols in the cashtag list are traded on the selected exchange.
 def create_match_list(exchange, twitter_base_list, twitter_dict):
 	print('Checking list of cashtags against supported symbols in {}...'.format(exchange.name))
@@ -97,7 +95,6 @@ def create_twitter_lists(screen_name, table):
 	return twitter_base_list, twitter_dict
 
 
-## MAIN CODE BODY ##
 # Load the settings from the settings file and turn them into variables.
 settings = cashtag_analyzer.load_settings()
 exchange_id = settings['exchange_options']['exchange_id']
